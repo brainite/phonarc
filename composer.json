@@ -1,0 +1,26 @@
+{
+    "name":"wittiws/phonarc",
+    "type":"library",
+    "description":"Phonarc: PHP/PDO wrapper for MHonArc.",
+    "keywords":[
+        "converter"
+    ],
+    "homepage":"https://github.com/wittiws/phonarc",
+    "license":"MIT",
+    "authors":[
+        {
+            "name":"Greg Payne",
+            "email":"greg.payne@gmail.com"
+        }
+    ],
+    "require":{
+        "php":">=5.3.3",
+        "symfony/console":"2.4.*"
+    },
+    "autoload":{
+        "psr-4":{
+            "Witti\\Phonarc\\": "src/"
+        }
+    },
+    "minimum-stability": "dev"
+}
