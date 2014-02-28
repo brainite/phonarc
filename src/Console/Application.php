@@ -13,6 +13,16 @@ namespace Witti\Phonarc\Console;
 class Application extends \Symfony\Component\Console\Application {
   public function __construct() {
     parent::__construct();
-    $this->add(new Install());
+
+    // Identify all of the available phonarc console commands.
+    $cmds = array(
+        new Install(),
+    );
+
+    // Add the commands after eliminating the implicit phonarc namespace.
+    foreach ($cmds as &$cmd) {
+      $cmd->setName(str_replace('phonarc:', '', $cmd->getName()));
+      $this->add($cmd);
+    }
   }
 }
