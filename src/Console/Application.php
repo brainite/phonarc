@@ -18,7 +18,6 @@ class Application extends \Symfony\Component\Console\Application {
     $cmds = array(
       new Install(),
       new CommandDownload(),
-      new Mhonarc(),
       new PdoImport(),
       new Manager(),
     );
