@@ -13,11 +13,15 @@ use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Input\InputOption;
 
 class CommandDownload extends \Symfony\Component\Console\Command\Command {
   protected function configure() {
     $this->setName('phonarc:download');
     $this->setDescription('1. Download email and import into MHonArc');
+    $this->setDefinition(array(
+      new InputOption('conf', NULL, InputOption::VALUE_REQUIRED, 'Specify a phonarc configuration file', './phonarc.yml'),
+    ));
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
@@ -25,8 +29,13 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       'bold',
     )));
 
-    $conf_path = 'lists.yml';
-    $confs = Yaml::parse($conf_path);
+    // Locate the configuration.
+    $conf_path = $input->getOption('conf');
+    if (!is_file($conf_path)) {
+      $output->writeln("<error>You must specify a valid configuration file via --conf.</error>");
+      return;
+    }
+    $confs = (array) Yaml::parse($conf_path);
 
     foreach ($confs as $conf_id => $conf) {
       if ($output->isVerbose()) {
