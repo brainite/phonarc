@@ -124,7 +124,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       // Prep the mhonarc template.
       $tpl_path = $root . '/.mhonarc.rss.tpl';
       $conf['mhonarc']['rcfile'] = $tpl_path;
-      file_put_contents($tpl_path, $this->getMHonArcRssTpl($conf));
+      file_put_contents($tpl_path, $this->getMHonArcRcTpl($conf));
 
       // Locate the emails to process.
       $emails = glob("$root/.email*", GLOB_NOSORT);
@@ -181,9 +181,9 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     }
   }
 
-  private function getMHonArcRssTpl($conf) {
+  private function getMHonArcRcTpl($conf) {
     // Use the string loader to avoid cache creation and pollution of filesystem.
-    $tpl = file_get_contents(__DIR__ . '/Resources/rss.tpl.twig');
+    $tpl = file_get_contents(__DIR__ . '/Resources/mhonarc_rc.tpl.twig');
     $loader = new \Twig_Loader_String();
     $twig = new \Twig_Environment($loader);
     return $twig->render($tpl, $conf);
