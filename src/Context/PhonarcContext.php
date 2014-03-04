@@ -103,6 +103,9 @@ class PhonarcContext {
           'idxsize' => 2000,
           'idxfname' => 'archive.rss',
         ),
+        'message' => array(
+          'version' => 'none',
+        ),
       ), $defaults, $conf, array(
         'getmail' => array(
           'options' => array(

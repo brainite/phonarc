@@ -34,6 +34,10 @@ class Message {
       'length' => 16,
     ));
     $metadata->mapField(array(
+      'fieldName' => 'message_version',
+      'length' => 16,
+    ));
+    $metadata->mapField(array(
       'fieldName' => 'subject',
       'length' => 255,
     ));
@@ -77,6 +81,11 @@ class Message {
         'mhonarc_thread' => array(
           'columns' => array(
             'mhonarc_thread',
+          ),
+        ),
+        'message_version' => array(
+          'columns' => array(
+            'message_version',
           ),
         ),
       ),
@@ -133,6 +142,11 @@ class Message {
    * @var string
    */
   private $body;
+
+  /**
+   * @var string
+   */
+  private $message_version;
 
   /**
    * @var \stdClass
@@ -326,6 +340,27 @@ class Message {
    */
   public function getParentId() {
     return $this->parent_id;
+  }
+
+  /**
+   * Set Message_Version
+   *
+   * @param string $message_version
+   * @return Message
+   */
+  public function setMessage_Version($message_version) {
+    $this->message_version = $message_version;
+
+    return $this;
+  }
+
+  /**
+   * Get Message_Version
+   *
+   * @return string
+   */
+  public function getMessage_Version() {
+    return $this->message_version;
   }
 
   /**
