@@ -16,7 +16,7 @@ class Application extends \Symfony\Component\Console\Application {
 
     // Identify all of the available phonarc console commands.
     $cmds = array(
-      new Install(),
+      new CommandInstall(),
       new CommandDownload(),
       new PdoImport(),
       new Manager(),

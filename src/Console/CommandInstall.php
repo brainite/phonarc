@@ -17,7 +17,7 @@ use Symfony\Component\Console\Input\InputOption;
 
 
 
-class Install extends \Symfony\Component\Console\Command\Command {
+class CommandInstall extends \Symfony\Component\Console\Command\Command {
   protected function configure() {
     $this->setName('phonarc:install');
     $this->setDescription('Install Phonarc');
