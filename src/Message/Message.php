@@ -16,10 +16,12 @@ class Message {
     $prefix = $context->getConf('doctrine.prefix');
 
     // Build the metadata.
+    $metadata->setIdGeneratorType(ClassMetadata::GENERATOR_TYPE_AUTO);
     $metadata->mapField(array(
-      'id' => true,
+      'id' => TRUE,
       'fieldName' => 'id',
-      'type' => 'integer'
+      'type' => 'integer',
+      'generator' => TRUE,
     ));
     $metadata->mapField(array(
       'fieldName' => 'date_sent',
@@ -63,7 +65,7 @@ class Message {
     ));
     $metadata->mapField(array(
       'fieldName' => 'headers',
-      'type' => 'object'
+      'type' => 'json_array'
     ));
     $metadata->setPrimaryTable(array(
       'name' => $prefix . 'message',
@@ -89,8 +91,121 @@ class Message {
           ),
         ),
       ),
-      'uniqueConstraints' => array(),
+      'uniqueConstraints' => array(
+        'mhonarc_message' => array(
+          'columns' => array(
+            'mhonarc_message',
+          ),
+        ),
+      ),
     ));
+  }
+
+  public function updateFromMhonarc() {
+    // Get the context.
+    $context = PhonarcContext::factory(PhonarcContext::CURRENT_CONTEXT);
+    $this->setMessageVersion($context->getConf('message.version'));
+
+    // Locate the original message file.
+    $path = $context->getConf('basepath') . '/' . $this->getMhonarcMessage();
+    $path = realpath($path);
+    if (!$path) {
+      throw new \ErrorException("Unable to locate message: "
+        . $this->getMhonarcMessage());
+    }
+
+    // Load the file.
+    $html = file_get_contents($path);
+
+    // Extract a part from the HTML.
+    $extract = function ($start = FALSE, $stop = FALSE) use ($html) {
+      if ($start === FALSE) {
+        $tmp = array(
+          '',
+          $html,
+        );
+      }
+      else {
+        $tmp = explode("<!--$start-->", $html, 2);
+      }
+      if (isset($tmp[1])) {
+        if ($stop === FALSE) {
+          return $tmp[1];
+        }
+        $tmp = explode("<!--$stop-->", $tmp[1], 2);
+        if (isset($tmp[1])) {
+          return trim($tmp[0]);
+        }
+      }
+      return '';
+    };
+
+    // Extract key sections from the MHonarc HTML.
+    $data = array();
+    $parts = array();
+    $parts['headers_comments'] = $extract(FALSE, 'X-Head-End');
+
+    // Extract the headers provided in HTML.
+    $parts['headers_html'] = $extract('X-Head-of-Message', 'X-Head-of-Message-End');
+    $xml = simplexml_load_string($parts['headers_html']);
+    $key = NULL;
+    foreach ($xml->children() as $child) {
+      switch ($child->getName()) {
+        case 'dt':
+          $key = strtolower(trim($child[0]));
+          break;
+        case 'dd':
+          $data[$key] = trim($child->asXml());
+          $data[$key] = preg_replace('@^<dd.*?>|</dd>$@s', '', $data[$key]);
+          break;
+      }
+    }
+    unset($xml);
+
+    // Extract the from data.
+    if (preg_match('@^(.*?)(?:&lt;)?<a.*?>(.*?)</a>@s', $data['from'], $arr)) {
+      $data['from_name'] = trim($arr[1], ' "\'');
+      $data['from_email'] = $arr[2];
+    }
+    elseif (preg_match('@^.+@.+$@', $data['from'])) {
+      $data['from_email'] = $data['from'];
+      $data['from_name'] = 'unknown';
+    }
+    else {
+      $data['from_name'] = $data['from'];
+      $data['from_email'] = 'unknown';
+    }
+
+    // Update the message with metadata.
+    $this->setSubject($data['subject']);
+    $this->setDateSent(date_create($data['date']));
+    $this->setFromEmail($data['from_email']);
+    $this->setFromName($data['from_name']);
+    $this->setMhonarcThread($data['thread-index']);
+
+    // Get the MHonArc version
+    if (preg_match('/<!-- MHonArc v([^ ]*) -->/', $html, $arr)) {
+      $data['mhonarcversion'] = $arr[1];
+    }
+    else {
+      $data['mhonarcversion'] = 0;
+    }
+
+    // Extract and clean the body.
+    $body = $extract('X-Body-of-Message', 'X-Body-of-Message-End');
+    $data['body'] = &$body;
+    $this->setBody($body);
+
+    /*
+     * @todo The follow options are still pending.
+     */
+    $headers = array();
+    $this->setThreadId(0);
+    $this->setParentId(0);
+    $this->setHeaders($headers);
+
+    //     var_dump($data);
+    //     exit;
   }
 
   /**
@@ -348,7 +463,7 @@ class Message {
    * @param string $message_version
    * @return Message
    */
-  public function setMessage_Version($message_version) {
+  public function setMessageVersion($message_version) {
     $this->message_version = $message_version;
 
     return $this;
@@ -359,7 +474,7 @@ class Message {
    *
    * @return string
    */
-  public function getMessage_Version() {
+  public function getMessageVersion() {
     return $this->message_version;
   }
 

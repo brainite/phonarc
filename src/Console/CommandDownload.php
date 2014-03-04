@@ -14,11 +14,12 @@ use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Witti\Phonarc\Context\PhonarcContext;
+use Witti\Phonarc\Message\Message;
 
 class CommandDownload extends \Symfony\Component\Console\Command\Command {
   protected function configure() {
     $this->setName('phonarc:download');
-    $this->setDescription('1. Download email and import into MHonArc');
+    $this->setDescription('Download email and import into MHonArc');
     $this->setDefinition(array(
       new InputOption('conf', NULL, InputOption::VALUE_REQUIRED, 'Specify a phonarc configuration file', './phonarc.yml'),
     ));
@@ -129,7 +130,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
         if ($output->isVerbose()) {
           $output->writeln("MHonArc: no emails to process.");
         }
-        continue;
+        goto end_getmail_to_mhonarc;
       }
       else {
         if ($output->isVerbose()) {
@@ -175,6 +176,11 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
           $output->writeln($mhonarc_output);
         }
       }
+      @unlink($tpl_path);
+      end_getmail_to_mhonarc:
+
+      // Import the emails into doctrine.
+      $this->mhonarcToDoctrine($context, $output);
     }
   }
 
@@ -184,6 +190,66 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     $loader = new \Twig_Loader_String();
     $twig = new \Twig_Environment($loader);
     return $twig->render($tpl, $conf);
+  }
+
+  private function mhonarcToDoctrine(PhonarcContext $context, OutputInterface $output) {
+    // Load the EntityManager
+    $em = $context->getEntityManager();
+
+    // Auto-correct any messages imported via an inactive configuration.
+    $qb = $em->createQueryBuilder();
+    $qb->select('m.id');
+    $qb->from('Witti\Phonarc\Message\Message', 'm');
+    $qb->where('m.message_version != ?1');
+    $qb->setParameter(1, $context->getConf('message.version'));
+    $regenerate = $qb->getQuery()->getArrayResult();
+    if (!empty($regenerate)) {
+      foreach ($regenerate as $old) {
+        try {
+          $msg = $em->find('Witti\Phonarc\Message\Message', $old['id']);
+          $em->persist($msg);
+          $msg->updateFromMhonarc();
+        } catch (\Exception $e) {
+          $output->writeln("<error>Error updating message id:" . $old['id']
+            . "</error>");
+        }
+      }
+      $em->flush();
+    }
+
+    // Get a list of messages that have been loaded via the current version.
+    $qb = $em->createQueryBuilder();
+    $qb->select('m.mhonarc_message');
+    $qb->from('Witti\Phonarc\Message\Message', 'm');
+    $qb->where('m.message_version = ?1');
+    $qb->setParameter(1, $context->getConf('message.version'));
+    $complete_ids = $qb->getQuery()->getArrayResult();
+    foreach ($complete_ids as $k => $v) {
+      $complete_ids[$k] = array_pop($v);
+    }
+    var_dump($complete_ids);
+
+    // Iterate over the msg files in the local directory.
+    $mhonarc_messages = new \RegexIterator(new \FilesystemIterator($context->getConf('basepath')), '@/(msg\d+\.html)$@', \RegexIterator::MATCH);
+    foreach ($mhonarc_messages as $fileinfo) {
+      $basename = basename($fileinfo->getFileName());
+
+      // Skip any messages that are already in the current version.
+      if (in_array($basename, $complete_ids)) {
+        continue;
+      }
+
+      //     $msg = $em->getRepository('Witti\Phonarc\Message\Message')->findOneBy(array(
+      //       'mhonarc_message' => $msg_basename,
+      //     ));
+
+      // Create a new message and update it from the file.
+      $msg = new Message();
+      $em->persist($msg);
+      $msg->setMhonarcMessage($basename);
+      $msg->updateFromMhonarc();
+    }
+    $em->flush();
   }
 
 }
