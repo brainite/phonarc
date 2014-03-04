@@ -6,7 +6,8 @@ use Witti\Phonarc\Context\PhonarcContext;
 class Message {
   protected $id;
   protected $date_sent;
-  protected $thread_md5;
+  protected $mhonarc_thread;
+  protected $mhonarc_message;
   protected $subject;
   protected $from_email;
   protected $from_name;
@@ -36,8 +37,12 @@ class Message {
       'type' => 'datetime'
     ));
     $metadata->mapField(array(
-      'fieldName' => 'thread_md5',
+      'fieldName' => 'mhonarc_thread',
       'length' => 32,
+    ));
+    $metadata->mapField(array(
+      'fieldName' => 'mhonarc_message',
+      'length' => 16,
     ));
     $metadata->mapField(array(
       'fieldName' => 'subject',
@@ -80,9 +85,9 @@ class Message {
             'date_sent',
           ),
         ),
-        'thread_md5' => array(
+        'mhonarc_thread' => array(
           'columns' => array(
-            'thread_md5',
+            'mhonarc_thread',
           ),
         ),
       ),
