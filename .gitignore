@@ -1,4 +1,2 @@
 composer.lock
 vendor/
-cli-config.php
-bootstrap.php
