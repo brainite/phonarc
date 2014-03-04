@@ -129,7 +129,11 @@ class PhonarcContext {
     $this->conf = $conf;
   }
 
-  public function getConf($key) {
+  public function getConf($key = NULL) {
+    if (!isset($key)) {
+      return $this->conf;
+    }
+    // Locate a specific key.
     $cursor = $this->conf;
     foreach (explode('.', $key) as $k) {
       if (!isset($cursor[$k])) {
@@ -142,7 +146,7 @@ class PhonarcContext {
 
   public function getEntityManager() {
     if (!isset($this->entityManager)) {
-      $isDevMode = true;
+      $isDevMode = FALSE;
 
       // Load the dbparams from the conf array.
       $dbParams = $this->conf['doctrine'];
