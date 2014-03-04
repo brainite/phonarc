@@ -134,7 +134,6 @@ class CommandInstall extends \Symfony\Component\Console\Command\Command {
       $command->setHelperSet($helpers);
       $arguments = array(
         'command' => 'orm:schema-tool:create',
-        '--dump-sql',
       );
       $input2 = new ArrayInput($arguments);
 
@@ -148,10 +147,13 @@ class CommandInstall extends \Symfony\Component\Console\Command\Command {
         if (preg_match("@Table '[^']+' already exists@", $e->getMessage())) {
           $output->writeln("  [DONE]    " . "Table already exists.");
           if ($input->getOption('update')) {
-            $arguments[] = '--force';
-            $input2 = new ArrayInput($arguments);
             $command = $app->find('orm:schema-tool:update');
             $command->setHelperSet($helpers);
+            $arguments = array(
+              'command' => 'orm:schema-tool:update',
+              '--force' => TRUE,
+            );
+            $input2 = new ArrayInput($arguments);
             $returnCode = $command->run($input2, $output);
             if ($returnCode == 0) {
               $output->writeln("  [DONE]    " . "Table updated.");
