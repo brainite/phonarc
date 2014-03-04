@@ -11,9 +11,9 @@
 namespace Witti\Phonarc\Console;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
-use Symfony\Component\Yaml\Yaml;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
+use Witti\Phonarc\Context\PhonarcContext;
 
 class CommandDownload extends \Symfony\Component\Console\Command\Command {
   protected function configure() {
@@ -31,13 +31,25 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
 
     // Locate the configuration.
     $conf_path = $input->getOption('conf');
-    if (!is_file($conf_path)) {
+    try {
+      PhonarcContext::loadConf($conf_path);
+    } catch (\Exception $e) {
       $output->writeln("<error>You must specify a valid configuration file via --conf.</error>");
       return;
     }
-    $confs = (array) Yaml::parse($conf_path);
 
-    foreach ($confs as $conf_id => $conf) {
+    while (TRUE) {
+      // Break the loop
+      $context = PhonarcContext::factory(PhonarcContext::NEXT_CONTEXT);
+      if (!isset($context)) {
+        break;
+      }
+
+      // Extract key variables.
+      $conf_id = $context->getId();
+      $conf = $context->getConf();
+
+      // Locate the key directory.
       if ($output->isVerbose()) {
         $output->writeln("<h1>LOADING CONFIGURATION: " . $conf_id . "</h1>");
       }
@@ -46,43 +58,6 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
         $output->writeln("Invalid local directory: " . $conf['basepath']);
         continue;
       }
-
-      // Apply default settings to the configuration.
-      $conf = array_replace_recursive(array(
-        'title' => 'Untitled',
-        'link' => 'http://example.com/test/',
-        'description' => 'This is the archive for untitled.',
-        'baseurl' => '/test/',
-        'basepath' => '/tmp/',
-        'max_downloads' => 1,
-        'getmail' => array(
-          'options' => array(
-            'verbose' => 0,
-            'delete' => 0,
-          ),
-          'retriever' => array(
-            'type' => 'BrokenUIDLPOP3Retriever',
-            'server' => 'localhost',
-            'username' => 'unknown',
-            'password' => 'password',
-          ),
-        ),
-        'mhonarc' => array(
-          'idxsize' => 2000,
-          'idxfname' => 'archive.rss',
-        ),
-      ), $conf, array(
-        'getmail' => array(
-          'options' => array(
-            'max_messages_per_session' => 1,
-          ),
-          'destination' => array(
-            'type' => 'Mboxrd',
-            'user' => 'apache',
-            "path" => NULL,
-          ),
-        ),
-      ));
 
       $count = 0;
       while (!$count || $count < $conf['max_downloads']) {

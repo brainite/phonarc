@@ -1,6 +1,7 @@
 <?php
 namespace Witti\Phonarc\Message;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Witti\Phonarc\Context\PhonarcContext;
 
 class Message {
   protected $id;
@@ -15,6 +16,16 @@ class Message {
   protected $headers;
 
   public static function loadMetadata(ClassMetadata $metadata) {
+    // Get the current context.
+    $context = PhonarcContext::factory(PhonarcContext::CURRENT_CONTEXT);
+    if (!isset($context)) {
+      throw new \ErrorException("Phonarc requires a valid context prior to loading metadata.");
+    }
+
+    // Determine the prefix for the table.
+    $prefix = $context->getConf('doctrine.prefix');
+
+    // Build the metadata.
     $metadata->mapField(array(
       'id' => true,
       'fieldName' => 'id',
@@ -57,7 +68,7 @@ class Message {
       'type' => 'object'
     ));
     $metadata->setPrimaryTable(array(
-      'name' => 'Message',
+      'name' => $prefix . 'message',
       'indexes' => array(
         'subject' => array(
           'columns' => array(

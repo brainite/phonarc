@@ -11,21 +11,32 @@
 namespace Witti\Phonarc\Console;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Input\ArrayInput;
+use Witti\Phonarc\Context\PhonarcContext;
+use Symfony\Component\Console\Input\InputOption;
 
-class Install extends \Symfony\Component\Console\Command\Command{
+
+
+class Install extends \Symfony\Component\Console\Command\Command {
   protected function configure() {
     $this->setName('phonarc:install');
     $this->setDescription('Install Phonarc');
+    $this->setDefinition(array(
+      new InputOption('conf', NULL, InputOption::VALUE_REQUIRED, 'Specify a phonarc configuration file', './phonarc.yml'),
+    ));
   }
 
   protected function execute(InputInterface $input, OutputInterface $output) {
+    // Add Doctrine subcommands.
+    $app = $this->getApplication();
+    $app->add(new \Doctrine\ORM\Tools\Console\Command\SchemaTool\CreateCommand);
+    $app->add(new \Doctrine\ORM\Tools\Console\Command\SchemaTool\UpdateCommand);
+
+    // Tests to run.
     $tests = array(
       array(
         'title' => 'Update from composer.',
-        'test' => array(
-          'class_exists',
-          '\Symfony\Component\Console\Command\Command'
-        ),
+        'test' => class_exists('\Symfony\Component\Console\Command\Command'),
         'instructions' => 'cd ' . escapeshellarg(dirname(dirname(__DIR__)))
           . '; composer.phar update',
       ),
@@ -52,7 +63,13 @@ class Install extends \Symfony\Component\Console\Command\Command{
     foreach ($tests as &$test) {
       $test['status'] = '';
       $test['pass'] = TRUE;
-      if ($test['test'][0] === 'which') {
+      if (is_bool($test['test'])) {
+        if (!$test['test']) {
+          $test['pass'] = FALSE;
+          $fail++;
+        }
+      }
+      elseif ($test['test'][0] === 'which') {
         $path = trim(shell_exec('which ' . escapeshellarg($test['test'][1])));
         if ($path === '') {
           $test['pass'] = FALSE;
@@ -60,14 +77,6 @@ class Install extends \Symfony\Component\Console\Command\Command{
         }
         else {
           $test['status'] .= 'Found: ' . $path;
-        }
-      }
-      elseif (function_exists($test['test'][0])) {
-        $func = array_shift($test['test']);
-        $tmp = call_user_func_array($func, $test['test']);
-        if (!$tmp) {
-          $test['pass'] = FALSE;
-          $fail++;
         }
       }
       else {
@@ -91,6 +100,60 @@ class Install extends \Symfony\Component\Console\Command\Command{
         $output->writeln("            " . $test['status']);
       }
     }
+
+    if ($fail) {
+      $output->writeln("Correct these issues and run again.");
+      return;
+    }
+
+    // Load the configuration file and install the schema for each list.
+    if ($output->isVerbose()) {
+      $output->writeln("Doctrine ORM installation:");
+    }
+
+    // Locate the configuration.
+    $conf_path = $input->getOption('conf');
+    try {
+      PhonarcContext::loadConf($conf_path);
+    } catch (\Exception $e) {
+      $output->writeln("<error>You must specify a valid configuration file via --conf.</error>");
+      return;
+    }
+
+    while (TRUE) {
+      // Break the loop
+      $context = PhonarcContext::factory(PhonarcContext::NEXT_CONTEXT);
+      if (!isset($context)) {
+        break;
+      }
+
+      // Build the command object and resources.
+      $helpers = $context->getHelperSet();
+      $command = $app->find('orm:schema-tool:create');
+      $command->setHelperSet($helpers);
+      $arguments = array(
+        'command' => 'orm:schema-tool:create',
+        '--dump-sql',
+      //'--force' => true
+      );
+      $input2 = new ArrayInput($arguments);
+
+      // Run the command to create the resources.
+      try {
+        $returnCode = $command->run($input2, $output);
+        if ($returnCode == 0) {
+          $output->writeln("  [DONE]    " . "Table created.");
+        }
+      } catch (\Doctrine\ORM\Tools\ToolsException $e) {
+        if (preg_match("@Table '[^']+' already exists@", $e->getMessage())) {
+          $output->writeln("  [DONE]    " . "Table already exists.");
+        }
+        else {
+          throw $e;
+        }
+      }
+    }
+
     if ($fail == 0) {
       $output->writeln("Success! Phonarc appears to be fully installed.");
     }
