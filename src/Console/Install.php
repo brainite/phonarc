@@ -23,6 +23,7 @@ class Install extends \Symfony\Component\Console\Command\Command {
     $this->setDescription('Install Phonarc');
     $this->setDefinition(array(
       new InputOption('conf', NULL, InputOption::VALUE_REQUIRED, 'Specify a phonarc configuration file', './phonarc.yml'),
+      new InputOption('update', NULL, InputOption::VALUE_NONE, 'Perform Doctrine updates'),
     ));
   }
 
@@ -134,7 +135,6 @@ class Install extends \Symfony\Component\Console\Command\Command {
       $arguments = array(
         'command' => 'orm:schema-tool:create',
         '--dump-sql',
-      //'--force' => true
       );
       $input2 = new ArrayInput($arguments);
 
@@ -147,6 +147,16 @@ class Install extends \Symfony\Component\Console\Command\Command {
       } catch (\Doctrine\ORM\Tools\ToolsException $e) {
         if (preg_match("@Table '[^']+' already exists@", $e->getMessage())) {
           $output->writeln("  [DONE]    " . "Table already exists.");
+          if ($input->getOption('update')) {
+            $arguments[] = '--force';
+            $input2 = new ArrayInput($arguments);
+            $command = $app->find('orm:schema-tool:update');
+            $command->setHelperSet($helpers);
+            $returnCode = $command->run($input2, $output);
+            if ($returnCode == 0) {
+              $output->writeln("  [DONE]    " . "Table updated.");
+            }
+          }
         }
         else {
           throw $e;
