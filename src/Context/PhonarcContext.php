@@ -161,6 +161,19 @@ class PhonarcContext {
       $this->entityManager = EntityManager::create($dbParams, $config);
       $driver = new StaticPHPDriver($paths);
       $this->entityManager->getConfiguration()->setMetadataDriverImpl($driver);
+
+      $conf = &$this->entityManager->getConfiguration();
+
+      // Reset most caches since we may have switched contexts.
+      // @link http://docs.doctrine-project.org/en/2.0.x/reference/caching.html
+      // $c = new \Doctrine\Common\Cache\ArrayCache();
+      // $c->flushAll();
+      $conf->setMetadataCacheImpl(new \Doctrine\Common\Cache\ArrayCache());
+      $conf->setQueryCacheImpl(new \Doctrine\Common\Cache\ArrayCache());
+      $conf->setHydrationCacheImpl(new \Doctrine\Common\Cache\ArrayCache());
+      $conf->setResultCacheImpl(new \Doctrine\Common\Cache\ArrayCache());
+      $cmf = $this->entityManager->getMetadataFactory();
+      $cmf->setCacheDriver(new \Doctrine\Common\Cache\ArrayCache());
     }
     return $this->entityManager;
   }
