@@ -36,7 +36,7 @@ class Message {
       'length' => 16,
     ));
     $metadata->mapField(array(
-      'fieldName' => 'message_version',
+      'fieldName' => 'context_version',
       'length' => 16,
     ));
     $metadata->mapField(array(
@@ -85,9 +85,9 @@ class Message {
             'mhonarc_thread',
           ),
         ),
-        'message_version' => array(
+        'context_version' => array(
           'columns' => array(
-            'message_version',
+            'context_version',
           ),
         ),
       ),
@@ -104,7 +104,7 @@ class Message {
   public function updateFromMhonarc() {
     // Get the context.
     $context = PhonarcContext::factory(PhonarcContext::CURRENT_CONTEXT);
-    $this->setMessageVersion($context->getConf('message.version'));
+    $this->setContextVersion($context->getConf('message.version'));
 
     // Locate the original message file.
     $path = $context->getConf('basepath') . '/' . $this->getMhonarcMessage();
@@ -266,7 +266,7 @@ class Message {
   /**
    * @var string
    */
-  private $message_version;
+  private $context_version;
 
   /**
    * @var \stdClass
@@ -463,24 +463,24 @@ class Message {
   }
 
   /**
-   * Set Message_Version
+   * Set context_version
    *
-   * @param string $message_version
+   * @param string $context_version
    * @return Message
    */
-  public function setMessageVersion($message_version) {
-    $this->message_version = $message_version;
+  public function setContextVersion($context_version) {
+    $this->context_version = $context_version;
 
     return $this;
   }
 
   /**
-   * Get Message_Version
+   * Get context_version
    *
    * @return string
    */
-  public function getMessageVersion() {
-    return $this->message_version;
+  public function getContextVersion() {
+    return $this->context_version;
   }
 
   /**
