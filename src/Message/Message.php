@@ -25,7 +25,7 @@ class Message {
     ));
     $metadata->mapField(array(
       'fieldName' => 'date_sent',
-      'type' => 'datetime'
+      'type' => 'datetime',
     ));
     $metadata->mapField(array(
       'fieldName' => 'mhonarc_thread',
@@ -53,19 +53,31 @@ class Message {
     ));
     $metadata->mapField(array(
       'fieldName' => 'thread_id',
-      'type' => 'integer'
+      'type' => 'integer',
     ));
     $metadata->mapField(array(
       'fieldName' => 'parent_id',
-      'type' => 'integer'
+      'type' => 'integer',
     ));
     $metadata->mapField(array(
       'fieldName' => 'body',
-      'type' => 'text'
+      'type' => 'text',
     ));
     $metadata->mapField(array(
       'fieldName' => 'headers',
-      'type' => 'json_array'
+      'type' => 'json_array',
+    ));
+    $metadata->mapField(array(
+      'fieldName' => 'sync_thread_id',
+      'type' => 'integer',
+    ));
+    $metadata->mapField(array(
+      'fieldName' => 'sync_message_id',
+      'type' => 'integer',
+    ));
+    $metadata->mapField(array(
+      'fieldName' => 'sync_context_version',
+      'length' => 16,
     ));
     $metadata->setPrimaryTable(array(
       'name' => $prefix . 'message',
@@ -88,6 +100,11 @@ class Message {
         'context_version' => array(
           'columns' => array(
             'context_version',
+          ),
+        ),
+        'sync_context_version' => array(
+          'columns' => array(
+            'sync_context_version',
           ),
         ),
       ),
@@ -259,6 +276,16 @@ class Message {
   private $parent_id;
 
   /**
+   * @var integer
+   */
+  private $sync_message_id;
+
+  /**
+   * @var integer
+   */
+  private $sync_thread_id;
+
+  /**
    * @var string
    */
   private $body;
@@ -267,6 +294,11 @@ class Message {
    * @var string
    */
   private $context_version;
+
+  /**
+   * @var string
+   */
+  private $sync_context_version;
 
   /**
    * @var \stdClass
@@ -481,6 +513,69 @@ class Message {
    */
   public function getContextVersion() {
     return $this->context_version;
+  }
+
+  /**
+   * Set sync_context_version
+   *
+   * @param string $sync_context_version
+   * @return Message
+   */
+  public function setSyncContextVersion($sync_context_version) {
+    $this->sync_context_version = $sync_context_version;
+
+    return $this;
+  }
+
+  /**
+   * Get sync_context_version
+   *
+   * @return string
+   */
+  public function getSyncContextVersion() {
+    return $this->sync_context_version;
+  }
+
+  /**
+   * Set sync_message_id
+   *
+   * @param string $sync_message_id
+   * @return Message
+   */
+  public function setSyncMessageId($sync_message_id) {
+    $this->sync_message_id = $sync_message_id;
+
+    return $this;
+  }
+
+  /**
+   * Get sync_message_id
+   *
+   * @return string
+   */
+  public function getSyncMessageId() {
+    return $this->sync_message_id;
+  }
+
+  /**
+   * Set sync_thread_id
+   *
+   * @param string $sync_thread_id
+   * @return Message
+   */
+  public function setSyncThreadId($sync_thread_id) {
+    $this->sync_thread_id = $sync_thread_id;
+
+    return $this;
+  }
+
+  /**
+   * Get sync_thread_id
+   *
+   * @return string
+   */
+  public function getSyncThreadId() {
+    return $this->sync_thread_id;
   }
 
   /**
