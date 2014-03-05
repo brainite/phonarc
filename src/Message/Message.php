@@ -176,6 +176,11 @@ class Message {
       $data['from_email'] = 'unknown';
     }
 
+    // Select the thread.
+    if (!isset($data['thread-index'])) {
+      $data['thread-index'] = md5(microtime());
+    }
+
     // Update the message with metadata.
     $this->setSubject($data['subject']);
     $this->setDateSent(date_create($data['date']));
