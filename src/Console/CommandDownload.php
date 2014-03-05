@@ -54,11 +54,12 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       if ($output->isVerbose()) {
         $output->writeln("<h1>LOADING CONFIGURATION: " . $conf_id . "</h1>");
       }
-      $root = realpath($conf['basepath']);
-      if (!$root || !is_dir($root)) {
+      $root = $conf['basepath'];
+      if (!$root || (!is_dir($root) && !mkdir($root))) {
         $output->writeln("Invalid local directory: " . $conf['basepath']);
         continue;
       }
+      $root = realpath($root);
 
       $count = 0;
       while (!$count || $count < $conf['max_downloads']) {
@@ -178,7 +179,6 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       }
       @unlink($tpl_path);
       end_getmail_to_mhonarc:
-
       // Import the emails into doctrine.
       $this->mhonarcToDoctrine($context, $output);
     }
@@ -193,6 +193,8 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
   }
 
   private function mhonarcToDoctrine(PhonarcContext $context, OutputInterface $output) {
+    $limit = 10;
+
     // Load the EntityManager
     $em = $context->getEntityManager();
 
@@ -200,11 +202,14 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     $qb = $em->createQueryBuilder();
     $qb->select('m.id');
     $qb->from('Witti\Phonarc\Message\Message', 'm');
-    $qb->where('m.message_version != ?1');
+    $qb->where('m.context_version != ?1');
     $qb->setParameter(1, $context->getConf('message.version'));
     $regenerate = $qb->getQuery()->getArrayResult();
     if (!empty($regenerate)) {
       foreach ($regenerate as $old) {
+        if (--$limit <= 0) {
+          break;
+        }
         try {
           $msg = $em->find('Witti\Phonarc\Message\Message', $old['id']);
           $em->persist($msg);
@@ -221,7 +226,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     $qb = $em->createQueryBuilder();
     $qb->select('m.mhonarc_message');
     $qb->from('Witti\Phonarc\Message\Message', 'm');
-    $qb->where('m.message_version = ?1');
+    $qb->where('m.context_version = ?1');
     $qb->setParameter(1, $context->getConf('message.version'));
     $complete_ids = $qb->getQuery()->getArrayResult();
     foreach ($complete_ids as $k => $v) {
@@ -243,6 +248,9 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       //     ));
 
       // Create a new message and update it from the file.
+      if (--$limit <= 0) {
+        break;
+      }
       $msg = new Message();
       $em->persist($msg);
       $msg->setMhonarcMessage($basename);
