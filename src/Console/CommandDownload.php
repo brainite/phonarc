@@ -227,7 +227,6 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     foreach ($complete_ids as $k => $v) {
       $complete_ids[$k] = array_pop($v);
     }
-    var_dump($complete_ids);
 
     // Iterate over the msg files in the local directory.
     $mhonarc_messages = new \RegexIterator(new \FilesystemIterator($context->getConf('basepath')), '@/(msg\d+\.html)$@', \RegexIterator::MATCH);
