@@ -1,6 +1,6 @@
 <?php
 /*
- * This file is part of the Witti FileConverter package.
+ * This file is part of the FileConverter package.
  *
  * (c) Greg Payne
  *
@@ -8,13 +8,13 @@
  * file that was distributed with this source code.
  */
 
-namespace Witti\Phonarc\Console;
+namespace Phonarc\Console;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Formatter\OutputFormatterStyle;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Input\InputOption;
-use Witti\Phonarc\Context\PhonarcContext;
-use Witti\Phonarc\Message\Message;
+use Phonarc\Context\PhonarcContext;
+use Phonarc\Message\Message;
 
 class CommandDownload extends \Symfony\Component\Console\Command\Command {
   protected function configure() {
@@ -201,7 +201,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     // Auto-correct any messages imported via an inactive configuration.
     $qb = $em->createQueryBuilder();
     $qb->select('m.id');
-    $qb->from('Witti\Phonarc\Message\Message', 'm');
+    $qb->from('Phonarc\Message\Message', 'm');
     $qb->where('m.context_version != ?1');
     $qb->setParameter(1, $context->getConf('message.version'));
     $regenerate = $qb->getQuery()->getArrayResult();
@@ -211,7 +211,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
           break;
         }
         try {
-          $msg = $em->find('Witti\Phonarc\Message\Message', $old['id']);
+          $msg = $em->find('Phonarc\Message\Message', $old['id']);
           $em->persist($msg);
           $msg->updateFromMhonarc();
         } catch (\Exception $e) {
@@ -225,7 +225,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     // Get a list of messages that have been loaded via the current version.
     $qb = $em->createQueryBuilder();
     $qb->select('m.mhonarc_message');
-    $qb->from('Witti\Phonarc\Message\Message', 'm');
+    $qb->from('Phonarc\Message\Message', 'm');
     $qb->where('m.context_version = ?1');
     $qb->setParameter(1, $context->getConf('message.version'));
     $complete_ids = $qb->getQuery()->getArrayResult();
@@ -243,7 +243,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
         continue;
       }
 
-      //     $msg = $em->getRepository('Witti\Phonarc\Message\Message')->findOneBy(array(
+      //     $msg = $em->getRepository('Phonarc\Message\Message')->findOneBy(array(
       //       'mhonarc_message' => $msg_basename,
       //     ));
 

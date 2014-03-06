@@ -1,8 +1,8 @@
 <?php
-namespace Witti\Phonarc\Message\Helper;
+namespace Phonarc\Message\Helper;
 
-use Witti\Phonarc\Context\PhonarcContext;
-use Witti\Phonarc\Message\Message;
+use Phonarc\Context\PhonarcContext;
+use Phonarc\Message\Message;
 
 class MessageInit {
   static public function process(PhonarcContext &$context, Message &$message) {

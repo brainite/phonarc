@@ -1,5 +1,5 @@
 <?php
-namespace Witti\Phonarc\Context;
+namespace Phonarc\Context;
 use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\EntityManager;
 use Doctrine\ORM\Mapping\Driver\StaticPHPDriver;

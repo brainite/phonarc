@@ -1,7 +1,7 @@
 <?php
-namespace Witti\Phonarc\Message;
+namespace Phonarc\Message;
 use Doctrine\ORM\Mapping\ClassMetadata;
-use Witti\Phonarc\Context\PhonarcContext;
+use Phonarc\Context\PhonarcContext;
 use Doctrine\ORM\Mapping as ORM;
 
 class Message {

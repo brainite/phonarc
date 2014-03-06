@@ -1,5 +1,5 @@
 #!/usr/bin/env php
 <?php 
 require dirname(__DIR__) . '/autoload.php.dist';
-$app = new \Witti\Phonarc\Console\Application();
+$app = new \Phonarc\Console\Application();
 $app->run();

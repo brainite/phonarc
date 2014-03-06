@@ -1,6 +1,6 @@
 <?php
 /*
- * This file is part of the Witti FileConverter package.
+ * This file is part of the FileConverter package.
  *
  * (c) Greg Payne
  *
@@ -8,7 +8,7 @@
  * file that was distributed with this source code.
  */
 
-namespace Witti\Phonarc;
+namespace Phonarc;
 class Phonarc {
   public function factory($conf = NULL) {
     $phonarc = new Phonarc();
