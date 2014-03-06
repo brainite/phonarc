@@ -1,7 +1,7 @@
 {
     "name":"wittiws/phonarc",
     "type":"library",
-    "description":"Phonarc: PHP/PDO wrapper for MHonArc.",
+    "description":"Phonarc: PHP wrapper for MHonArc.",
     "keywords":[
         "converter"
     ],
