@@ -105,6 +105,14 @@ class PhonarcContext {
         ),
         'message' => array(
           'version' => 'none',
+          'optimize' => false,
+          'attachments' => array(
+            'optimize' => false,
+            'dataurl' => false,
+          ),
+        ),
+        'fileconverter' => array(
+          'html~optimize' => NULL,
         ),
       ), $defaults, $conf, array(
         'getmail' => array(
