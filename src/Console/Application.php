@@ -1,6 +1,6 @@
 <?php
 /*
- * This file is part of the FileConverter package.
+ * This file is part of the Phonarc package.
  *
  * (c) Greg Payne
  *

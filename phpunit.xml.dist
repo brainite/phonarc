@@ -18,7 +18,7 @@
     </php>
 
     <testsuites>
-        <testsuite name="FileConverter">
+        <testsuite name="Phonarc">
             <directory>./src/Tests/</directory>
         </testsuite>
     </testsuites>
