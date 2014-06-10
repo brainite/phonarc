@@ -11,5 +11,8 @@
 namespace Phonarc\Tests;
 
 class BasicTest extends \PHPUnit_Framework_TestCase {
+  public function testInitialCase() {
+    $this->assertEquals(1, 1);
+  }
 
 }
