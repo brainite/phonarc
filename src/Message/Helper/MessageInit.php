@@ -3,6 +3,7 @@ namespace Phonarc\Message\Helper;
 
 use Phonarc\Context\PhonarcContext;
 use Phonarc\Message\Message;
+use QuipXml\Quip;
 
 class MessageInit {
   static public function process(PhonarcContext &$context, Message &$message) {
@@ -47,53 +48,19 @@ class MessageInit {
       return '';
     };
 
-    // Extract key sections from the MHonarc HTML.
-    $data = array();
-    $parts = array();
-    $parts['headers_comments'] = $extract(FALSE, 'X-Head-End');
-
-    // Extract the headers provided in HTML.
-    $parts['headers_html'] = $extract('X-Head-of-Message', 'X-Head-of-Message-End');
-    $xml = simplexml_load_string($parts['headers_html']);
-    $key = NULL;
-    foreach ($xml->children() as $child) {
-      switch ($child->getName()) {
-        case 'dt':
-          $key = strtolower(trim($child[0]));
-          break;
-        case 'dd':
-          $data[$key] = trim($child->asXml());
-          $data[$key] = preg_replace('@^<dd.*?>|</dd>$@s', '', $data[$key]);
-          break;
-      }
-    }
-    unset($xml);
-
-    // Extract the from data.
-    if (preg_match('@^(.*?)(?:&lt;)?<a.*?>(.*?)</a>@s', $data['from'], $arr)) {
-      $data['from_name'] = trim($arr[1], ' "\'');
-      $data['from_email'] = $arr[2];
-    }
-    elseif (preg_match('@^.+@.+$@', $data['from'])) {
-      $data['from_email'] = $data['from'];
-      $data['from_name'] = 'unknown';
-    }
-    else {
-      $data['from_name'] = $data['from'];
-      $data['from_email'] = 'unknown';
-    }
-
-    // Select the thread.
-    if (!isset($data['thread-index'])) {
-      $data['thread-index'] = md5(microtime());
+    // Extract the meta data.
+    $meta = array();
+    $quip = Quip::load($path, 0, TRUE, '', FALSE, Quip::LOAD_NS_UNWRAP | Quip::LOAD_IGNORE_ERRORS);
+    foreach ($quip->xpath("//meta") as $m) {
+      $meta[strtoupper(trim($m['name']))] = trim($m['content']);
     }
 
     // Update the message with metadata.
-    $message->setSubject($data['subject']);
-    $message->setDateSent(date_create($data['date']));
-    $message->setFromEmail($data['from_email']);
-    $message->setFromName($data['from_name']);
-    $message->setMhonarcThread($data['thread-index']);
+    $message->setSubject($meta['SUBJECTNA']);
+    $message->setDateSent(date_create($meta['LOCALDATE']));
+    $message->setFromEmail($meta['FROMADDR']);
+    $message->setFromName($meta['FROMNAME']);
+    $message->setMhonarcThread($meta['TTOP']);
 
     // Get the MHonArc version
     if (preg_match('/<!-- MHonArc v([^ ]*) -->/', $html, $arr)) {
@@ -114,12 +81,43 @@ class MessageInit {
     $data['body'] = &$body;
     $message->setBody($body);
 
-    /*
-     * @todo The follow options are still pending.
-     */
-    $headers = array();
-    $message->setThreadId(0);
-    $message->setParentId(0);
-    $message->setHeaders($headers);
+    // Calculate the thread_id
+    //     $thread_message = MessageRepository::findOneMessageBy(array(
+    //       'mhonarc_message' => $meta['TTOP'],
+    //     ));
+    //     $thread_id = $thread_message->getThreadId();
+    $message->setThreadId(MessageQuery::getIdFromMhonarcMessage($meta['TTOP']));
+    $message->setParentId(MessageQuery::getIdFromMhonarcMessage($meta['TPARENT']));
+
+    // Store all of the meta data in the database.
+    $top = $extract(FALSE, 'X-Head-End');
+    $headers = explode('<!--', $top);
+    array_shift($headers);
+    foreach ($headers as $header) {
+      $h = explode('-->', $header);
+      array_pop($h);
+      $h = implode('-->', $h);
+      $h = explode(':', $h, 2);
+      $name = strtoupper(trim($h[0]));
+      $content = trim($h[1]);
+      if (!isset($meta[$name])) {
+        $meta[$name] = $content;
+      }
+      else {
+        $meta[$name] = (array) $meta[$name];
+        $meta[$name][] = $content;
+      }
+    }
+    $message->setHeaders($meta);
+
+    // Default values to allow save and/or trigger sync.
+    $message->setSyncThreadId((int) $message->getSyncThreadId());
+    $message->setSyncMessageId((int) $message->getSyncMessageId());
+    $message->setSyncContextVersion('pending');
+
+//     if (strpos($path, '11') !== FALSE) {
+//       var_export($meta);
+//       exit;
+//     }
   }
 }

@@ -178,9 +178,57 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
         }
       }
       @unlink($tpl_path);
+
       end_getmail_to_mhonarc:
+
       // Import the emails into doctrine.
       $this->mhonarcToDoctrine($context, $output);
+
+      // Sync the emails to the secondary data source.
+      $this->doctrineToOther($context, $output);
+    }
+  }
+
+  private function doctrineToOther(PhonarcContext $context, OutputInterface $output) {
+    $limit = 1;
+
+    // Create the sync engine.
+    $sync_conf = $context->getConf('sync');
+    $class = $sync_conf['class'];
+    if (!isset($class) || !class_exists($class)) {
+      $output->writeln("No sync class configured or available.");
+      return;
+    }
+    $sync_engine = new $class();
+
+    // Load the EntityManager
+    $em = $context->getEntityManager();
+
+    // Auto-correct any messages imported via an inactive configuration.
+    $qb = $em->createQueryBuilder();
+    $qb->select('m.id');
+    $qb->from('Phonarc\Message\Message', 'm');
+    $qb->where('m.sync_context_version != ?1');
+    $qb->setParameter(1, $context->getConf('message.version'));
+    $qb->orderBy('m.mhonarc_message', 'ASC');
+    $regenerate = $qb->getQuery()->getArrayResult();
+    if (!empty($regenerate)) {
+      foreach ($regenerate as $old) {
+        if (--$limit < 0) {
+          break;
+        }
+        try {
+          $msg = $em->find('Phonarc\Message\Message', $old['id']);
+          $em->persist($msg);
+          $sync_engine->process($msg, $context, $output);
+          $msg->setSyncContextVersion($context->getConf('message.version'));
+        } catch (\Exception $e) {
+          $output->writeln("<error>Error syncing message id:" . $old['id']
+              . "</error>");
+          $output->writeln("<error>" . $e->getMessage() . "</error>");
+        }
+      }
+      $em->flush();
     }
   }
 
@@ -193,7 +241,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
   }
 
   private function mhonarcToDoctrine(PhonarcContext $context, OutputInterface $output) {
-    $limit = 10;
+    $limit = 1;
 
     // Load the EntityManager
     $em = $context->getEntityManager();
@@ -207,7 +255,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     $regenerate = $qb->getQuery()->getArrayResult();
     if (!empty($regenerate)) {
       foreach ($regenerate as $old) {
-        if (--$limit <= 0) {
+        if (--$limit < 0) {
           break;
         }
         try {
@@ -217,6 +265,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
         } catch (\Exception $e) {
           $output->writeln("<error>Error updating message id:" . $old['id']
             . "</error>");
+          $output->writeln("<error>" . $e->getMessage() . "</error>");
         }
       }
       $em->flush();
@@ -248,7 +297,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       //     ));
 
       // Create a new message and update it from the file.
-      if (--$limit <= 0) {
+      if (--$limit < 0) {
         break;
       }
       $msg = new Message();

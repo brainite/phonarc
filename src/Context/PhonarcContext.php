@@ -11,6 +11,11 @@ class PhonarcContext {
   const CURRENT_CONTEXT = -1;
   const NEXT_CONTEXT = -2;
 
+  /**
+   * Generate the PhonarcContext object or return from cache.
+   * @param string $context_id
+   * @return PhonarcContext
+   */
   static public function factory($context_id = NULL) {
     static $contexts = array();
     static $prev = NULL;
@@ -114,6 +119,9 @@ class PhonarcContext {
         'fileconverter' => array(
           'html~optimize' => NULL,
         ),
+        'sync' => array(
+          'class' => NULL,
+        ),
       ), $defaults, $conf, array(
         'getmail' => array(
           'options' => array(
@@ -170,7 +178,7 @@ class PhonarcContext {
       $driver = new StaticPHPDriver($paths);
       $this->entityManager->getConfiguration()->setMetadataDriverImpl($driver);
 
-      $conf = &$this->entityManager->getConfiguration();
+      $conf = $this->entityManager->getConfiguration();
 
       // Reset most caches since we may have switched contexts.
       // @link http://docs.doctrine-project.org/en/2.0.x/reference/caching.html
@@ -184,6 +192,8 @@ class PhonarcContext {
       $cmf->setCacheDriver(new \Doctrine\Common\Cache\ArrayCache());
     }
     return $this->entityManager;
+
+    // $result = $em->getRepository('x')->findBy(array('column_name' => 'value'));
   }
 
   public function getHelperSet() {

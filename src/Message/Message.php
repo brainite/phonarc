@@ -3,6 +3,7 @@ namespace Phonarc\Message;
 use Doctrine\ORM\Mapping\ClassMetadata;
 use Phonarc\Context\PhonarcContext;
 use Doctrine\ORM\Mapping as ORM;
+use Phonarc\Message\Helper\MessageRepository;
 
 class Message {
   public static function loadMetadata(ClassMetadata $metadata) {
@@ -482,6 +483,26 @@ class Message {
     $this->body = $body;
 
     return $this;
+  }
+
+  /**
+   * Get the entire ancestry for this message
+   *
+   * @return array
+   */
+  public function getAncestry() {
+    $parent = MessageRepository::findById($this->getParentId());
+    var_dump("Ancestry (need ID and an object):", $this->getParentId());
+    var_export($parent);
+//     exit;
+    if ($parent) {
+      $ancestry = $parent->getAncestry();
+      $ancestry[] = $parent;
+    }
+    else {
+      $ancestry = array();
+    }
+    return $ancestry;
   }
 
   /**
