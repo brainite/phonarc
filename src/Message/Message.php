@@ -491,10 +491,12 @@ class Message {
    * @return array
    */
   public function getAncestry() {
-    $parent = MessageRepository::findById($this->getParentId());
-    var_dump("Ancestry (need ID and an object):", $this->getParentId());
-    var_export($parent);
-//     exit;
+    $parent_id = $this->getParentId();
+    $parent = FALSE;
+    if ($parent_id != $this->getId()) {
+      $parent = MessageRepository::findById($this->getParentId());
+    }
+
     if ($parent) {
       $ancestry = $parent->getAncestry();
       $ancestry[] = $parent;

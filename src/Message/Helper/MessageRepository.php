@@ -5,7 +5,7 @@ use Phonarc\Context\PhonarcContext;
 class MessageRepository {
   static public function findById($message_id) {
     return MessageRepository::findOneMessageBy(array(
-      'mhonarc_message' => $message_id,
+      'id' => $message_id,
     ));
   }
 
