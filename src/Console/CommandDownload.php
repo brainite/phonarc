@@ -17,6 +17,8 @@ use Phonarc\Context\PhonarcContext;
 use Phonarc\Message\Message;
 
 class CommandDownload extends \Symfony\Component\Console\Command\Command {
+  const RUN_LIMIT = 10;
+
   protected function configure() {
     $this->setName('phonarc:download');
     $this->setDescription('Download email and import into MHonArc');
@@ -190,7 +192,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
   }
 
   private function doctrineToOther(PhonarcContext $context, OutputInterface $output) {
-    $limit = 1;
+    $limit = self::RUN_LIMIT;
 
     // Create the sync engine.
     $sync_conf = $context->getConf('sync');
@@ -241,7 +243,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
   }
 
   private function mhonarcToDoctrine(PhonarcContext $context, OutputInterface $output) {
-    $limit = 1;
+    $limit = self::RUN_LIMIT;
 
     // Load the EntityManager
     $em = $context->getEntityManager();

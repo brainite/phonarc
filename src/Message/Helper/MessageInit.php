@@ -50,7 +50,8 @@ class MessageInit {
 
     // Extract the meta data.
     $meta = array();
-    $quip = Quip::load($path, 0, TRUE, '', FALSE, Quip::LOAD_NS_UNWRAP | Quip::LOAD_IGNORE_ERRORS);
+    $quip = Quip::load($path, 0, TRUE, '', FALSE, Quip::LOAD_NS_UNWRAP
+      | Quip::LOAD_IGNORE_ERRORS);
     foreach ($quip->xpath("//meta") as $m) {
       $meta[strtoupper(trim($m['name']))] = trim($m['content']);
     }
@@ -111,13 +112,18 @@ class MessageInit {
     $message->setHeaders($meta);
 
     // Default values to allow save and/or trigger sync.
-    $message->setSyncThreadId((int) $message->getSyncThreadId());
+    $syncThreadId = (int) $message->getSyncThreadId();
+    if (!syncThreadId
+      || ($message->getMhonarcMessage() != $message->getMhonarcThread())) {
+      // Recompute thread id.
+      $thread_message = MessageRepository::findById($message->getMhonarcThread());
+      if ($thread_message) {
+        $syncThreadId = (int) $thread_message->getSyncMessageId();
+      }
+    }
+    $message->setSyncThreadId($syncThreadId);
     $message->setSyncMessageId((int) $message->getSyncMessageId());
     $message->setSyncContextVersion('pending');
-
-//     if (strpos($path, '11') !== FALSE) {
-//       var_export($meta);
-//       exit;
-//     }
   }
+
 }

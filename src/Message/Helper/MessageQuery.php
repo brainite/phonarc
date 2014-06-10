@@ -11,7 +11,8 @@ class MessageQuery {
     $qb->where('m.mhonarc_message = ?1');
     $qb->setParameter(1, $mhonarc_message);
     try {
-      return (int) $qb->getQuery()->getSingleResult();
+      $result = $qb->getQuery()->getSingleScalarResult();
+      return (int) $result;
     } catch (\Exception $e) {
       return 0;
     }
