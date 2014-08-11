@@ -17,7 +17,7 @@ use Phonarc\Context\PhonarcContext;
 use Phonarc\Message\Message;
 
 class CommandDownload extends \Symfony\Component\Console\Command\Command {
-  const RUN_LIMIT = 10;
+  const RUN_LIMIT = 20;
 
   protected function configure() {
     $this->setName('phonarc:download');
@@ -114,7 +114,15 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
           // If nothing was downloaded, then stop.
           break;
         }
+
+        // Eliminate any non-header lines from the beginning of the file.
+        $dat = file_get_contents($mbox_path);
+        if (preg_match("@^[^:\r\n]+[\r\n]+@s", $dat, $arr)) {
+          $dat = substr($dat, strlen($arr[0]));
+          file_put_contents($mbox_path, $dat);
+        }
       }
+
 
       // Import the file into MHonArc
       if ($output->isVerbose()) {
