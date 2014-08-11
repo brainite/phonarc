@@ -58,7 +58,7 @@ class MessageInit {
 
     // Update the message with metadata.
     $message->setSubject($meta['SUBJECTNA']);
-    $message->setDateSent(date_create($meta['LOCALDATE']));
+    $message->setDateSent(date_create($meta['MSGLOCALDATE']));
     $message->setFromEmail($meta['FROMADDR']);
     $message->setFromName($meta['FROMNAME']);
     $message->setMhonarcThread($meta['TTOP']);
