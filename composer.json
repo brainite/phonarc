@@ -1,11 +1,11 @@
 {
-    "name":"wittiws/phonarc",
+    "name":"cpnporg/phonarc",
     "type":"library",
     "description":"Phonarc: PHP wrapper for MHonArc.",
     "keywords":[
         "converter"
     ],
-    "homepage":"https://github.com/wittiws/phonarc",
+    "homepage":"https://github.com/cpnporg/phonarc",
     "license":"MIT",
     "authors":[
         {
