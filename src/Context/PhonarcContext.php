@@ -1,4 +1,13 @@
 <?php
+/*
+ * This file is part of the Phonarc package.
+ *
+ * (c) CPNP
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
 namespace Phonarc\Context;
 use Doctrine\ORM\Tools\Setup;
 use Doctrine\ORM\EntityManager;
