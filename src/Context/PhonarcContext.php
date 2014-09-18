@@ -138,7 +138,7 @@ class PhonarcContext {
           ),
           'destination' => array(
             'type' => 'Mboxrd',
-            'user' => 'apache',
+            'user' => 'www-data',
             "path" => NULL,
           ),
         ),
