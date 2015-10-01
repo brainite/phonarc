@@ -109,7 +109,7 @@ class MessageInit {
       $h = implode('-->', $h);
       $h = explode(':', $h, 2);
       $name = strtoupper(trim($h[0]));
-      $content = trim($h[1]);
+      $content = isset($h[1]) ? trim($h[1]) : '';
       if (!isset($meta[$name])) {
         $meta[$name] = $content;
       }
@@ -122,7 +122,7 @@ class MessageInit {
 
     // Default values to allow save and/or trigger sync.
     $syncThreadId = (int) $message->getSyncThreadId();
-    if (!syncThreadId
+    if (!$syncThreadId
       || ($message->getMhonarcMessage() != $message->getMhonarcThread())) {
       // Recompute thread id.
       $thread_message = MessageRepository::findById($message->getMhonarcThread());
