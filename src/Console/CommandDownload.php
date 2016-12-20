@@ -82,6 +82,9 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
         $getmail_ini_path = tempnam($root, '.getmailconf.');
         $data = '';
         foreach ($conf['getmail'] as $section_id => $params) {
+          if ($section_id === 'cli') {
+            continue;
+          }
           $data .= "[$section_id]\n";
           foreach ($params as $k => $v) {
             if (is_string($v)) {
@@ -101,8 +104,14 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
         if ($output->isVerbose()) {
           $output->writeln("Getmail: running.");
         }
-        $getmail_output = shell_exec("getmail -r "
-          . escapeshellarg($getmail_ini_path));
+        $cmd = "getmail ";
+        if (isset($conf['getmail']['cli']) && is_array($conf['getmail']['cli'])) {
+          foreach ($conf['getmail']['cli'] as $k => $v) {
+            $cmd .= " --$k=" . escapeshellarg($v);
+          }
+        }
+        $cmd .= " -r " . escapeshellarg($getmail_ini_path);
+        $getmail_output = shell_exec($cmd);
 
         // Getmail cleanup
         if ($output->isVerbose()) {
@@ -122,7 +131,6 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
           file_put_contents($mbox_path, $dat);
         }
       }
-
 
       // Import the file into MHonArc
       if ($output->isVerbose()) {
@@ -190,7 +198,6 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       @unlink($tpl_path);
 
       end_getmail_to_mhonarc:
-
       // Import the emails into doctrine.
       $this->mhonarcToDoctrine($context, $output);
 
