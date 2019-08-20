@@ -24,6 +24,8 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     $this->setDescription('Download email and import into MHonArc');
     $this->setDefinition(array(
       new InputOption('conf', NULL, InputOption::VALUE_REQUIRED, 'Specify a phonarc configuration file', './phonarc.yml'),
+      new InputOption('regen-doctrine', NULL, InputOption::VALUE_OPTIONAL, 'Regenerate a specific message by the doctrine-based row ID', ''),
+      new InputOption('run-limit', NULL, InputOption::VALUE_OPTIONAL, 'Limit the number of records to handle in each phase', self::RUN_LIMIT),
     ));
   }
 
@@ -199,15 +201,18 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
 
       end_getmail_to_mhonarc:
       // Import the emails into doctrine.
-      $this->mhonarcToDoctrine($context, $output);
+      $this->mhonarcToDoctrine($context, $input, $output);
 
       // Sync the emails to the secondary data source.
-      $this->doctrineToOther($context, $output);
+      $this->doctrineToOther($context, $input, $output);
     }
   }
 
-  private function doctrineToOther(PhonarcContext $context, OutputInterface $output) {
-    $limit = self::RUN_LIMIT;
+  private function doctrineToOther(PhonarcContext $context, InputInterface $input, OutputInterface $output) {
+    $limit = max(1, (int) $input->getOption('run-limit', self::RUN_LIMIT));
+
+    // Regen doctrine.
+    $regen_id = $input->getOption('regen-doctrine', NULL);
 
     // Create the sync engine.
     $sync_conf = $context->getConf('sync');
@@ -225,7 +230,11 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     $qb = $em->createQueryBuilder();
     $qb->select('m.id');
     $qb->from('Phonarc\Message\Message', 'm');
-    $qb->where('m.sync_context_version != ?1');
+    $where = 'm.sync_context_version != ?1';
+    if (!empty($regen_id) && is_numeric($regen_id)) {
+      $where .= " OR m.id = " . ((int) $regen_id);
+    }
+    $qb->where($where);
     $qb->setParameter(1, $context->getConf('message.version'));
     $qb->orderBy('m.mhonarc_message', 'ASC');
     $regenerate = $qb->getQuery()->getArrayResult();
@@ -241,7 +250,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
           $msg->setSyncContextVersion($context->getConf('message.version'));
         } catch (\Exception $e) {
           $output->writeln("<error>Error syncing message id:" . $old['id']
-              . "</error>");
+            . "</error>");
           $output->writeln("<error>" . $e->getMessage() . "</error>");
         }
       }
@@ -257,8 +266,8 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     return $twig->render($tpl, $conf);
   }
 
-  private function mhonarcToDoctrine(PhonarcContext $context, OutputInterface $output) {
-    $limit = self::RUN_LIMIT;
+  private function mhonarcToDoctrine(PhonarcContext $context, InputInterface $input, OutputInterface $output) {
+    $limit = max(1, (int) $input->getOption('run-limit', self::RUN_LIMIT));
 
     // Load the EntityManager
     $em = $context->getEntityManager();
