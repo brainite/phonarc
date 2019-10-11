@@ -18,7 +18,6 @@ class Application extends \Symfony\Component\Console\Application {
     $cmds = array(
       new CommandInstall(),
       new CommandDownload(),
-      new Manager(),
     );
 
     // Add the commands after eliminating the implicit phonarc namespace.
