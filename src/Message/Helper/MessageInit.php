@@ -82,11 +82,59 @@ class MessageInit {
 
     // Extract and clean the body.
     $body = $extract('X-Body-of-Message', 'X-Body-of-Message-End');
+
+    // Detect and address UTF-7. This catches when there are 4+ "<" characters.
+    // mhonarc does not support:
+    //    https://www.mhonarc.org/archive/html/mhonarc-dev/2008-02/msg00001.html
+    // decoding:
+    //    https://en.wikipedia.org/wiki/UTF-7#Decoding
+    if (substr_count($body, '+ADw-') > 4) {
+      $body = preg_replace_callback('@\+([A-Za-z0-9]{2,})\-@s', function ($matches) {
+        $code = $matches[1];
+        if ($code{0} === 'A') {
+          // Handle the basic ASCII characters.
+          $tmp = trim(base64_decode($code));
+          if ($tmp !== '') {
+            $tmp = str_replace("\0", '', $tmp);
+            return $tmp;
+          }
+        }
+        else {
+          // All higher codes will be treated as entities.
+          static $charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+,';
+          $bin = '';
+          foreach (str_split($code) as $chr) {
+            $b = decbin(strpos($charset, $chr));
+            $bin .= str_pad($b, 6, '0', STR_PAD_LEFT);
+          }
+          $utf16 = '';
+          $tmp = $bin;
+          while (strlen($tmp) >= 16) {
+            $b = substr($tmp, 0, 16);
+            $tmp = substr($tmp, 16);
+            $utf16 .= dechex(bindec($b));
+          }
+          return "&#x$utf16;";
+        }
+        return "+$code-";
+      }, $body);
+      // Aggressively sanitize UTF-7 messages
+      $tmp = explode('<!--', $body);
+      $body = array_shift($tmp);
+      foreach ($tmp as $p) {
+        $p = explode('-->', $p, 2);
+        $body .= $p[1];
+      }
+      $body = strip_tags($body);
+      $body = trim($body);
+      $body = nl2br($body);
+    }
+
+    // Clean the body content by removing some characters.
     $body = strtr($body, $protect);
     $body = strtr($body, array(
       "\r" => '',
     ));
-    // Apply cleaning here.
     $body = strtr($body, array_flip($protect));
     $data['body'] = &$body;
     $message->setBody($body);

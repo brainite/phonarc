@@ -272,11 +272,18 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
     // Load the EntityManager
     $em = $context->getEntityManager();
 
+    // Regen doctrine.
+    $regen_id = $input->getOption('regen-doctrine', NULL);
+
     // Auto-correct any messages imported via an inactive configuration.
     $qb = $em->createQueryBuilder();
     $qb->select('m.id');
     $qb->from('Phonarc\Message\Message', 'm');
-    $qb->where('m.context_version != ?1');
+    $where = 'm.context_version != ?1';
+    if (!empty($regen_id) && is_numeric($regen_id)) {
+      $where .= " OR m.id = " . ((int) $regen_id);
+    }
+    $qb->where($where);
     $qb->setParameter(1, $context->getConf('message.version'));
     $regenerate = $qb->getQuery()->getArrayResult();
     if (!empty($regenerate)) {
@@ -288,6 +295,11 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
           $msg = $em->find('Phonarc\Message\Message', $old['id']);
           $em->persist($msg);
           $msg->updateFromMhonarc();
+
+          if ($output->isVerbose()) {
+            $output->writeln("Regenerated BODY:");
+            $output->writeln($msg->getBody());
+          }
         } catch (\Exception $e) {
           $output->writeln("<error>Error updating message id:" . $old['id']
             . "</error>");
