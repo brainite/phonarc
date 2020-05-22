@@ -26,6 +26,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       new InputOption('conf', NULL, InputOption::VALUE_REQUIRED, 'Specify a phonarc configuration file', './phonarc.yml'),
       new InputOption('regen-doctrine', NULL, InputOption::VALUE_OPTIONAL, 'Regenerate a specific message by the doctrine-based row ID', ''),
       new InputOption('run-limit', NULL, InputOption::VALUE_OPTIONAL, 'Limit the number of records to handle in each phase', self::RUN_LIMIT),
+      new InputOption('id-limit', NULL, InputOption::VALUE_OPTIONAL, 'Limit to a specific ID'),
     ));
   }
 
@@ -43,6 +44,9 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       return;
     }
 
+      // Limit based on the ID.
+      $id_limit = $input->getOption('id-limit', NULL);
+
     while (TRUE) {
       // Break the loop
       $context = PhonarcContext::factory(PhonarcContext::NEXT_CONTEXT);
@@ -52,6 +56,9 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
 
       // Extract key variables.
       $conf_id = $context->getId();
+      if (isset($id_limit) && $id_limit !== $conf_id) {
+        continue;
+      }
       $conf = $context->getConf();
 
       // Locate the key directory.
