@@ -91,7 +91,7 @@ class MessageInit {
     if (substr_count($body, '+ADw-') > 4) {
       $body = preg_replace_callback('@\+([A-Za-z0-9]{2,})\-@s', function ($matches) {
         $code = $matches[1];
-        if ($code{0} === 'A') {
+        if ($code[0] === 'A') {
           // Handle the basic ASCII characters.
           $tmp = trim(base64_decode($code));
           if ($tmp !== '') {
