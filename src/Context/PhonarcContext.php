@@ -76,7 +76,11 @@ class PhonarcContext {
     }
 
     // Parse the configuration.
-    $confs = Yaml::parse($path);
+    $yaml = file_get_contents($path);
+    if (!$yaml) {
+      throw new \InvalidArgumentException("Empty configuration file.");
+    }
+    $confs = Yaml::parse($yaml);
     if (!is_array($confs)) {
       throw new \InvalidArgumentException("Empty configuration file.");
     }
