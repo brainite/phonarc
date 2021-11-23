@@ -44,8 +44,8 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
       return;
     }
 
-      // Limit based on the ID.
-      $id_limit = $input->getOption('id-limit', NULL);
+    // Limit based on the ID.
+    $id_limit = $input->getOption('id-limit', NULL);
 
     while (TRUE) {
       // Break the loop
@@ -86,7 +86,7 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
         // Build an ini file for getmail.
         $conf['getmail']['destination']['path'] = $mbox_path;
         if ($output->isVerbose()) {
-          $output->writeln("Getmail: writing configuration");
+          $output->writeln("Getmail: writing configuration for $conf_id");
         }
         $getmail_ini_path = tempnam($root, '.getmailconf.');
         $data = '';
@@ -120,10 +120,17 @@ class CommandDownload extends \Symfony\Component\Console\Command\Command {
           }
         }
         $cmd .= " -r " . escapeshellarg($getmail_ini_path);
+        $cmd .= " 2>&1 ";
         $getmail_output = shell_exec($cmd);
+        $dump = $output->isVerbose();
+        if (strpos($getmail_output, 'error') !== FALSE) {
+          $dump = TRUE;
+        }
 
         // Getmail cleanup
-        if ($output->isVerbose()) {
+        if ($dump && trim($getmail_output) !== '') {
+          $output->writeln($getmail_output);
+          $output->writeln("Getmail conf:\n$data");
           $output->writeln("Getmail: cleanup.");
         }
         unlink($getmail_ini_path);
